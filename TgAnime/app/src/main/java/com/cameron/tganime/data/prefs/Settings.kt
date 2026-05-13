@@ -37,31 +37,6 @@ class SettingsStore(private val ctx: Context) {
         ctx.dataStore.edit { it[PROXY_BASE_KEY] = value.trim().trimEnd('/') }
     }
 
-    /**
-     * 电影 (TMDB) backend — separate from the tg_anime playback proxy.
-     * Default points at the public yinshi deployment; user can override
-     * in Settings if they're self-hosting.
-     */
-    val mediaBackendBaseFlow: Flow<String> =
-        ctx.dataStore.data.map {
-            it[MEDIA_BACKEND_BASE_KEY]?.takeIf { v -> v.isNotBlank() }
-                ?: DEFAULT_MEDIA_BACKEND_BASE
-        }
-
-    suspend fun setMediaBackendBase(value: String) {
-        ctx.dataStore.edit { it[MEDIA_BACKEND_BASE_KEY] = value.trim().trimEnd('/') }
-    }
-
-    val mediaBackendTokenFlow: Flow<String> =
-        ctx.dataStore.data.map {
-            it[MEDIA_BACKEND_TOKEN_KEY]?.takeIf { v -> v.isNotBlank() }
-                ?: DEFAULT_MEDIA_BACKEND_TOKEN
-        }
-
-    suspend fun setMediaBackendToken(value: String) {
-        ctx.dataStore.edit { it[MEDIA_BACKEND_TOKEN_KEY] = value.trim() }
-    }
-
     val watchListFlow: Flow<List<WatchEntry>> =
         ctx.dataStore.data.map { prefs ->
             val raw = prefs[WATCHLIST_JSON_KEY].orEmpty()
@@ -120,22 +95,6 @@ class SettingsStore(private val ctx: Context) {
             stringPreferencesKey("proxy_base")
         private val WATCHLIST_JSON_KEY: Preferences.Key<String> =
             stringPreferencesKey("watchlist_json_v1")
-        private val MEDIA_BACKEND_BASE_KEY: Preferences.Key<String> =
-            stringPreferencesKey("media_backend_base")
-        private val MEDIA_BACKEND_TOKEN_KEY: Preferences.Key<String> =
-            stringPreferencesKey("media_backend_token")
-
-        /** Public yinshi deployment, per its README. */
-        const val DEFAULT_MEDIA_BACKEND_BASE: String =
-            "https://media-backend-nrz6.onrender.com"
-
-        /**
-         * Shared Bearer token. Repo is private; rotation is via Render
-         * Environment, which silently invalidates this fallback. Users on
-         * a self-hosted deployment can override in Settings.
-         */
-        const val DEFAULT_MEDIA_BACKEND_TOKEN: String =
-            "nTHIL9Lysb/1pA3JHDxq8vNMMNOTiOozE0/Ty5JcAPc="
     }
 }
 

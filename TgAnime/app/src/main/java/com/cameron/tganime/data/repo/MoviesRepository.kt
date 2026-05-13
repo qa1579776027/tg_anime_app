@@ -7,21 +7,24 @@ import com.cameron.tganime.data.prefs.SettingsStore
 import kotlinx.coroutines.flow.first
 
 /**
- * TMDB list data via the yinshi `media-backend` `/api/tmdb/list` route.
+ * TMDB list data via the tg_anime backend (`yiti`) `/api/tmdb/list` route.
  *
- * The base URL and Bearer token both come from [SettingsStore] so users on a
- * self-hosted yinshi can override them. We rebuild the Retrofit client per
- * call because either may have changed since last call; the underlying
- * OkHttp client + connection pool is shared, so cost is negligible.
+ * Base URL comes from [SettingsStore.proxyBaseFlow] (the same `proxyBase` the
+ * playback proxy already uses) so the user only ever configures one address.
+ * We rebuild the Retrofit client per call because the URL may have changed
+ * since last call; the underlying OkHttp client + connection pool is shared,
+ * so the cost is negligible.
  */
 class MoviesRepository(
     private val network: NetworkModule,
     private val settings: SettingsStore,
 ) {
     private suspend fun api(): MediaBackendApi {
-        val base = settings.mediaBackendBaseFlow.first()
-        val token = settings.mediaBackendTokenFlow.first()
-        return network.mediaBackendApi(base, token)
+        val base = settings.proxyBaseFlow.first().trim()
+        if (base.isEmpty()) {
+            throw IllegalStateException("proxyBase not configured — set the tg_anime backend URL in Settings")
+        }
+        return network.mediaBackendApi(base)
     }
 
     suspend fun popular(kind: String = "movie", page: Int = 1): TmdbListResponse =

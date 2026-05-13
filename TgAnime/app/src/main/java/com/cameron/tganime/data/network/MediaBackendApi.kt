@@ -3,9 +3,8 @@ package com.cameron.tganime.data.network
 import retrofit2.http.GET
 import retrofit2.http.Query
 
-// yinshi (media-backend) /api/tmdb/list route. Used by the 电影 tab.
-// All non-/api/health routes require Authorization: Bearer <token> — injected
-// by NetworkModule.bearerInterceptor when calling mediaBackendApi().
+// tg_anime backend ("yiti") /api/tmdb/list route. Used by the 电影 tab.
+// No auth — yiti's TMDB routes are read-only and live on private LAN.
 interface MediaBackendApi {
     // endpoint: popular | top_rated | now_playing | upcoming | trending
     // kind:     movie | tv | all   (all is only valid for trending)
