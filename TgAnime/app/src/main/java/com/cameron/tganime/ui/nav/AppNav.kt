@@ -24,6 +24,7 @@ import com.cameron.tganime.ui.cache.CacheScreen
 import com.cameron.tganime.ui.calendar.CalendarScreen
 import com.cameron.tganime.ui.detail.SeriesDetailScreen
 import com.cameron.tganime.ui.explore.ExploreScreen
+import com.cameron.tganime.ui.movies.MoviesScreen
 import com.cameron.tganime.ui.player.PlayerScreen
 import com.cameron.tganime.ui.search.SearchScreen
 import com.cameron.tganime.ui.settings.SettingsScreen
@@ -100,6 +101,9 @@ fun AppRoot() {
                     onOpenSubject = { subject -> openSubject(nav, subject) },
                     onOpenWatchEntry = { entry -> openWatchEntry(nav, entry) },
                 )
+            }
+            composable(Tab.Movies.route) {
+                MoviesScreen()
             }
             composable(Tab.WatchList.route) {
                 WatchListScreen(

@@ -4,6 +4,7 @@ import android.app.Application
 import com.cameron.tganime.data.network.NetworkModule
 import com.cameron.tganime.data.prefs.SettingsStore
 import com.cameron.tganime.data.repo.DiscoverRepository
+import com.cameron.tganime.data.repo.MoviesRepository
 import com.cameron.tganime.data.repo.OpenListRepository
 import com.cameron.tganime.data.repo.SearchRepository
 import com.cameron.tganime.data.repo.TvSearchRepository
@@ -23,6 +24,7 @@ class TgAnimeApp : Application() {
     val tvSearchRepo: TvSearchRepository by lazy {
         TvSearchRepository(network.baseHttpClient, network.jsonFormat)
     }
+    val moviesRepo: MoviesRepository by lazy { MoviesRepository(network, settings) }
 
     override fun onCreate() {
         super.onCreate()

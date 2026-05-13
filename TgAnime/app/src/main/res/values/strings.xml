@@ -4,6 +4,7 @@
 
     <!-- Bottom tabs -->
     <string name="tab_explore">探索</string>
+    <string name="tab_movies">电影</string>
     <string name="tab_watchlist">追番</string>
     <string name="tab_cache">缓存</string>
 

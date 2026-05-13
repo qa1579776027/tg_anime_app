@@ -58,6 +58,37 @@ class NetworkModule(
             .build()
         chain.proceed(req)
     }
+
+    /**
+     * Build a fresh [MediaBackendApi] pointing at [baseUrl] with [token] as the
+     * Bearer credential. We don't cache this because both base URL and token
+     * are user-configurable in Settings and may change at runtime.
+     *
+     * [baseUrl] must end with `/` (Retrofit requirement). Trailing slash is
+     * added if missing.
+     */
+    fun mediaBackendApi(baseUrl: String, token: String): MediaBackendApi {
+        val normalized = if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/"
+        return Retrofit.Builder()
+            .baseUrl(normalized)
+            .client(
+                baseHttpClient.newBuilder()
+                    .addInterceptor(bearerInterceptor(token))
+                    .build()
+            )
+            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+            .build()
+            .create(MediaBackendApi::class.java)
+    }
+
+    private fun bearerInterceptor(token: String) = Interceptor { chain ->
+        val req = chain.request().newBuilder()
+            .header("User-Agent", USER_AGENT)
+            .header("Accept", "application/json")
+            .apply { if (token.isNotBlank()) header("Authorization", "Bearer $token") }
+            .build()
+        chain.proceed(req)
+    }
 }
 
 private fun defaultHttpClient(): OkHttpClient {

@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,6 +19,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -38,6 +39,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,6 +56,9 @@ import coil.compose.AsyncImage
 import com.cameron.tganime.R
 import com.cameron.tganime.data.network.BgmSubject
 import com.cameron.tganime.data.prefs.WatchEntry
+import com.cameron.tganime.ui.movies.BottomGradientScrim
+import com.cameron.tganime.ui.movies.PagerDots
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -180,37 +185,52 @@ private fun SectionHeader(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HotCarousel(items: List<BgmSubject>, onClick: (BgmSubject) -> Unit) {
     if (items.isEmpty()) return
-    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        // Show ~1.4 cards per screen so the next item peeks in.
-        val cardWidth = maxWidth * 0.72f
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            items(items, key = { it.id }) { subject ->
-                HotCard(
-                    subject = subject,
-                    width = cardWidth,
-                    onClick = { onClick(subject) },
-                )
-            }
+    val pager = rememberPagerState(pageCount = { items.size })
+
+    // Auto-advance every 6s, pause while the user is dragging. items.size is in
+    // the key so the timer restarts cleanly when the list shrinks/grows.
+    LaunchedEffect(pager.isScrollInProgress, items.size) {
+        if (!pager.isScrollInProgress && items.size > 1) {
+            delay(6_000)
+            val next = (pager.currentPage + 1) % items.size
+            pager.animateScrollToPage(next)
         }
+    }
+
+    Box(modifier = Modifier.fillMaxWidth()) {
+        HorizontalPager(
+            state = pager,
+            modifier = Modifier.fillMaxWidth(),
+        ) { idx ->
+            HotCard(
+                subject = items[idx],
+                onClick = { onClick(items[idx]) },
+            )
+        }
+        PagerDots(
+            count = items.size,
+            current = pager.currentPage,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 10.dp),
+        )
     }
 }
 
 @Composable
 private fun HotCard(
     subject: BgmSubject,
-    width: androidx.compose.ui.unit.Dp,
     onClick: () -> Unit,
 ) {
     Box(
         modifier = Modifier
-            .width(width)
-            .aspectRatio(16f / 10f)
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .aspectRatio(16f / 9f)
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .clickable(onClick = onClick),
@@ -223,19 +243,7 @@ private fun HotCard(
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
         )
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            Color.Black.copy(alpha = 0.65f),
-                        ),
-                        startY = 200f,
-                    )
-                )
-        )
+        BottomGradientScrim()
         Column(
             modifier = Modifier
                 .fillMaxWidth()
