@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TG Anime</string>
+
+    <!-- Bottom tabs -->
+    <string name="tab_explore">探索</string>
+    <string name="tab_watchlist">追番</string>
+    <string name="tab_cache">缓存</string>
+
+    <!-- Legacy keys (still referenced from old screens) -->
+    <string name="tab_search">搜索</string>
+    <string name="tab_discover">发现</string>
+    <string name="tab_settings">设置</string>
+
+    <!-- Explore page -->
+    <string name="explore_title">探索</string>
+    <string name="explore_hot_section">最高热度</string>
+    <string name="explore_calendar_button">新番时间表</string>
+    <string name="explore_continue_section">继续观看</string>
+    <string name="explore_continue_empty">将番剧收藏为「在看」后将在这里显示</string>
+    <string name="explore_recommend_section">推荐</string>
+    <string name="explore_search">搜索</string>
+    <string name="explore_profile">个人 / 设置</string>
+
+    <!-- Calendar sub-page -->
+    <string name="calendar_title">新番时间表</string>
+
+    <!-- Watchlist tab -->
+    <string name="watchlist_title">追番</string>
+    <string name="watchlist_empty">还没收藏任何番剧。\n在探索或番剧详情里点收藏按钮把它加进来。</string>
+
+    <!-- Cache tab -->
+    <string name="cache_title">缓存 / 网盘</string>
+    <string name="cache_proxy_missing">请先到设置里填写后端地址,才能浏览 OpenList / AList 文件</string>
+    <string name="cache_root_path">/</string>
+    <string name="cache_empty_dir">这个目录是空的</string>
+    <string name="cache_loading">加载中…</string>
+
+    <!-- Series detail bottom sheet -->
+    <string name="detail_add_watching">加入「在看」</string>
+    <string name="detail_remove_watching">从「在看」移除</string>
+    <string name="detail_search_button">在动漫索引里搜这部</string>
+    <string name="detail_close">关闭</string>
+
+    <!-- Search -->
+    <string name="search_hint">输入番剧名…</string>
+    <string name="search_empty">还没搜过,试试上方搜索框</string>
+    <string name="search_no_results">没有结果</string>
+    <string name="search_loading">搜索中…</string>
+
+    <string name="discover_loading">加载本季新番…</string>
+    <string name="discover_failed">加载失败,下拉重试</string>
+
+    <string name="settings_proxy_label">tg_anime 后端地址</string>
+    <string name="settings_proxy_helper">指向 PC 上 python -m tg_anime 跑的端口(默认 8080)</string>
+    <string name="settings_proxy_hint">http://192.168.x.x:8080</string>
+    <string name="settings_test_btn">测试连接</string>
+    <string name="settings_save_btn">保存</string>
+    <string name="settings_about">数据源:探索 = bgm.tv 本季周历 / 搜索 = acgn.es / 播放 = tg_anime 后端代理</string>
+
+    <string name="player_loading">缓冲中…</string>
+    <string name="player_error_title">播放出错</string>
+
+    <string name="ep_picker_title">选集</string>
+    <string name="ep_source_title">选源</string>
+    <string name="ep_unparsed_section">未识别集数</string>
+</resources>
