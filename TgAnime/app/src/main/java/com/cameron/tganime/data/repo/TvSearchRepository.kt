@@ -3,6 +3,8 @@ package com.cameron.tganime.data.repo
 import com.cameron.tganime.data.network.TvPlayRequest
 import com.cameron.tganime.data.network.TvPlayResponse
 import com.cameron.tganime.data.network.TvSearchResponse
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -46,12 +48,14 @@ class TvSearchRepository(
             .get()
             .build()
 
-        client.newCall(req).execute().use { resp ->
-            val body = resp.body?.string().orEmpty()
-            if (!resp.isSuccessful) {
-                throw IOException("tv/search ${resp.code}: ${body.take(200)}")
+        return withContext(Dispatchers.IO) {
+            client.newCall(req).execute().use { resp ->
+                val body = resp.body?.string().orEmpty()
+                if (!resp.isSuccessful) {
+                    throw IOException("tv/search ${resp.code}: ${body.take(200)}")
+                }
+                json.decodeFromString(TvSearchResponse.serializer(), body)
             }
-            return json.decodeFromString(TvSearchResponse.serializer(), body)
         }
     }
 
@@ -69,12 +73,14 @@ class TvSearchRepository(
             .post(body.toRequestBody("application/json".toMediaTypeOrNull()))
             .build()
 
-        client.newCall(req).execute().use { resp ->
-            val text = resp.body?.string().orEmpty()
-            if (!resp.isSuccessful) {
-                throw IOException("tv/play ${resp.code}: ${text.take(200)}")
+        return withContext(Dispatchers.IO) {
+            client.newCall(req).execute().use { resp ->
+                val text = resp.body?.string().orEmpty()
+                if (!resp.isSuccessful) {
+                    throw IOException("tv/play ${resp.code}: ${text.take(200)}")
+                }
+                json.decodeFromString(TvPlayResponse.serializer(), text)
             }
-            return json.decodeFromString(TvPlayResponse.serializer(), text)
         }
     }
 }

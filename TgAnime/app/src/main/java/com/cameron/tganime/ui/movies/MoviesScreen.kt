@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
@@ -25,11 +26,19 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -47,11 +56,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.cameron.tganime.data.network.TmdbItem
+import com.cameron.tganime.data.network.TvHit
 import kotlinx.coroutines.delay
 
 private const val MOVIES_TITLE = "电影"
@@ -59,23 +71,55 @@ private const val ERROR_RETRY = "重试"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MoviesScreen(vm: MoviesViewModel = viewModel()) {
+fun MoviesScreen(
+    vm: MoviesViewModel = viewModel(),
+    onPlay: (url: String, title: String) -> Unit = { _, _ -> },
+) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val searching by vm.searching.collectAsStateWithLifecycle()
+    val searchQuery by vm.searchQuery.collectAsStateWithLifecycle()
+    val searchHits by vm.searchHits.collectAsStateWithLifecycle()
+    val searchLoading by vm.searchLoading.collectAsStateWithLifecycle()
+    val searchError by vm.searchError.collectAsStateWithLifecycle()
+    val playingHitId by vm.playingHitId.collectAsStateWithLifecycle()
     var selected by remember { mutableStateOf<TmdbItem?>(null) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
             title = { Text(MOVIES_TITLE, fontWeight = FontWeight.SemiBold) },
+            actions = {
+                IconButton(onClick = { if (searching) vm.stopSearch() else vm.startSearch() }) {
+                    Icon(Icons.Outlined.Search, contentDescription = "搜索")
+                }
+            },
         )
 
-        when (val s = state) {
-            MoviesState.Loading -> CenteredSpinner()
-            is MoviesState.Failed -> CenteredError(s.msg, onRetry = vm::refresh)
-            is MoviesState.Loaded -> MoviesBody(
-                hero = s.hero,
-                rows = s.rows,
-                onClick = { selected = it },
+        if (searching) {
+            SearchBar(
+                query = searchQuery,
+                onQuery = { vm.searchQuery.value = it },
+                onSubmit = vm::submitSearch,
             )
+            when {
+                searchLoading -> CenteredSpinner()
+                searchError != null -> CenteredError(searchError!!, onRetry = vm::submitSearch)
+                searchHits.isNotEmpty() -> TvSearchResults(
+                    hits = searchHits,
+                    playingId = playingHitId,
+                    onHitClick = { hit -> vm.play(hit) { url, title -> onPlay(url, title) } },
+                )
+                else -> CenteredHint("输入电影/剧集名称搜索")
+            }
+        } else {
+            when (val s = state) {
+                MoviesState.Loading -> CenteredSpinner()
+                is MoviesState.Failed -> CenteredError(s.msg, onRetry = vm::refresh)
+                is MoviesState.Loaded -> MoviesBody(
+                    hero = s.hero,
+                    rows = s.rows,
+                    onClick = { selected = it },
+                )
+            }
         }
     }
 
@@ -353,6 +397,97 @@ fun BoxScope.BottomGradientScrim() {
                 )
             )
     )
+}
+
+@Composable
+private fun SearchBar(
+    query: String,
+    onQuery: (String) -> Unit,
+    onSubmit: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = onQuery,
+            placeholder = { Text("搜索电影/剧集…") },
+            singleLine = true,
+            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+            shape = RoundedCornerShape(24.dp),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(onSearch = { onSubmit() }),
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun TvSearchResults(
+    hits: List<TvHit>,
+    playingId: Long?,
+    onHitClick: (TvHit) -> Unit,
+) {
+    LazyColumn(
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        items(hits, key = { it.hit_id }) { hit ->
+            val resolving = playingId == hit.hit_id
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable(enabled = !resolving) { onHitClick(hit) }
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = hit.title.ifBlank { "(无标题)" },
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 2,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        if (hit.drive.isNotBlank()) {
+                            Text(
+                                text = if (hit.drive.lowercase() == "quark") "夸克" else hit.drive,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        hit.quality.take(2).forEach { q ->
+                            Text(q, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                        }
+                    }
+                }
+                if (resolving) {
+                    CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.5.dp)
+                } else {
+                    Icon(
+                        Icons.Outlined.PlayArrow,
+                        contentDescription = "播放",
+                        modifier = Modifier.size(28.dp),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CenteredHint(text: String) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+    }
 }
 
 @Composable

@@ -103,7 +103,9 @@ fun AppRoot() {
                 )
             }
             composable(Tab.Movies.route) {
-                MoviesScreen()
+                MoviesScreen(
+                    onPlay = { url, title -> nav.navigate(playerRoute(url, title)) },
+                )
             }
             composable(Tab.WatchList.route) {
                 WatchListScreen(

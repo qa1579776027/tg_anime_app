@@ -7,6 +7,8 @@ import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.IOException
 
 /**
@@ -34,12 +36,14 @@ class OpenListRepository(
             .get()
             .build()
 
-        client.newCall(req).execute().use { resp ->
-            val body = resp.body?.string().orEmpty()
-            if (!resp.isSuccessful) {
-                throw IOException("openlist list ${resp.code}: ${body.take(200)}")
+        return withContext(Dispatchers.IO) {
+            client.newCall(req).execute().use { resp ->
+                val body = resp.body?.string().orEmpty()
+                if (!resp.isSuccessful) {
+                    throw IOException("openlist list ${resp.code}: ${body.take(200)}")
+                }
+                json.decodeFromString(OpenListResp.serializer(), body).entries
             }
-            return json.decodeFromString(OpenListResp.serializer(), body).entries
         }
     }
 
@@ -53,12 +57,14 @@ class OpenListRepository(
             .get()
             .build()
 
-        client.newCall(req).execute().use { resp ->
-            val body = resp.body?.string().orEmpty()
-            if (!resp.isSuccessful) {
-                throw IOException("openlist url ${resp.code}: ${body.take(200)}")
+        return withContext(Dispatchers.IO) {
+            client.newCall(req).execute().use { resp ->
+                val body = resp.body?.string().orEmpty()
+                if (!resp.isSuccessful) {
+                    throw IOException("openlist url ${resp.code}: ${body.take(200)}")
+                }
+                json.decodeFromString(OpenListUrlResp.serializer(), body).url
             }
-            return json.decodeFromString(OpenListUrlResp.serializer(), body).url
         }
     }
 }

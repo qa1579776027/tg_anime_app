@@ -8,7 +8,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
-import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
@@ -29,6 +29,7 @@ private const val USER_AGENT =
  * tg_anime backend.
  */
 private const val HOST_BGM_API = "api.bgm.tv"
+private const val HOST_ACGN = "search.acgn.es"
 private val IMAGE_HOSTS = setOf("image.tmdb.org", "lain.bgm.tv", "bangumi-image.bangumi.tv")
 
 /**
@@ -67,6 +68,19 @@ class ProxyRewriteInterceptor(private val holder: ProxyBaseHolder) : Interceptor
         if (base.isEmpty()) return null
         val baseUrl = base.toHttpUrlOrNull() ?: return null
         val host = url.host
+
+        if (host.equals(HOST_ACGN, ignoreCase = true)) {
+            // search.acgn.es/api/?word=... -> ${proxyBase}/proxy/acgn?word=...
+            val builder = baseUrl.newBuilder()
+                .addPathSegment("proxy")
+                .addPathSegment("acgn")
+            for (name in url.queryParameterNames) {
+                for (value in url.queryParameterValues(name)) {
+                    if (value != null) builder.addQueryParameter(name, value)
+                }
+            }
+            return builder.build()
+        }
 
         if (host.equals(HOST_BGM_API, ignoreCase = true)) {
             // /calendar               -> /api/bgm/calendar
@@ -110,9 +124,9 @@ class NetworkModule(
     val jsonFormat: Json get() = json
 
     /**
-     * acgn.es is *not* proxied through yiti — there's no `/api/acgn` route on
-     * the backend and it's already on a reasonably fast CDN. If we ever want to
-     * proxy it too, add a host case to [ProxyRewriteInterceptor].
+     * acgn.es search client. [ProxyRewriteInterceptor] rewrites
+     * `search.acgn.es/api/...` to `${proxyBase}/proxy/acgn?...` when proxy
+     * is configured.
      */
     val acgnApi: AcgnApi by lazy {
         Retrofit.Builder()
